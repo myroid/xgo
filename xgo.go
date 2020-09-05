@@ -198,13 +198,27 @@ func checkDocker() error {
 }
 
 // Checks whether a required docker image is available locally.
+// See: https://docs.docker.com/engine/reference/commandline/images/#list-the-full-length-image-ids
 func checkDockerImage(image string) (bool, error) {
 	fmt.Printf("🐳 Checking for required docker image %s... ", image)
 	out, err := exec.Command("docker", "images", "--no-trunc").Output()
 	if err != nil {
 		return false, err
 	}
-	return bytes.Contains(out, []byte(image)), nil
+	dockerName := dockerDist[:len(dockerDist)-1]
+	if !bytes.Contains(out, []byte(dockerName)) {
+		return false, nil
+	}
+	bss := bytes.Split(out, []byte("\n"))
+	for _, bs := range bss {
+		if !bytes.Contains(out, []byte(dockerName)) {
+			continue
+		}
+		if bytes.Contains(bs, []byte(*goVersion)) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // Pulls an image from the docker registry.
